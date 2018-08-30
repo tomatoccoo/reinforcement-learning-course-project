@@ -35,43 +35,43 @@ def encode_state(map, position):
 
 # Hyper Parameters
 BATCH_SIZE = 32
-LR = 0.01                     # learning rate
+LR = 0.1                     # learning rate
 EPSILON = 0.9                # greedy policy
 GAMMA = 0.99                    # reward discount
 TARGET_REPLACE_ITER = 10   # target update frequency
 MEMORY_CAPACITY = 2000
 
 
-IS_SLIPPERY = False        # is the lake slippery
+IS_SLIPPERY = False       # is the lake slippery
 use_random_map = True
 HOLE_NUM = 1               # the number of holes
 
 env = FrozenLakeEnv(desc=random_map(HOLE_NUM), is_slippery=IS_SLIPPERY)
 env = env.unwrapped
 N_ACTIONS = env.action_space.n
-N_STATES = 16 + 16 + 16 # 'F', 'H', 'where is the Agent'
+N_STATES = 16 #+ 16 + 16 # 'F', 'H', 'where is the Agent'
 ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_space.sample().shape     # to confirm the shape
 
 
 class Net(nn.Module):
     def __init__(self, ):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(N_STATES, 128)
-        self.fc1.weight.data.uniform_(0, 0.01)   # initialization
-        self.fc2 = nn.Linear(128, 64)
-        self.fc2.weight.data.uniform_(0, 0.01)
+        #self.fc1 = nn.Linear(N_STATES, 512)
+        #self.fc1.weight.data.uniform_(0, 0.01)   # initialization
+        #self.fc2 = nn.Linear(512, 512)
+        #self.fc2.weight.data.uniform_(0, 0.01)
 
-        self.out = nn.Linear(64, N_ACTIONS)
-        self.out.weight.data.uniform_(0, 0.01)   # initialization
+        #self.out = nn.Linear(512, N_ACTIONS)
+        #self.out.weight.data.uniform_(0, 0.01)   # initialization
 
-        #self.W = nn.Linear(N_STATES, N_ACTIONS, bias = False)
-        #self.W.weight.data.uniform_(0, 0.001)
+        self.W = nn.Linear(N_STATES, N_ACTIONS, bias = False)
+        self.W.weight.data.uniform_(0, 0.01)
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        actions_value = self.out(x)
+        #x = F.relu(self.fc1(x))
+        #x = F.relu(self.fc2(x))
+        #actions_value = self.out(x)
 
-        #actions_value = self.W(x)
+        actions_value = self.W(x)
         return actions_value
 
 
@@ -133,8 +133,6 @@ class DQN(object):
 dqn = DQN()
 
 episode_durations = []
-
-
 plt.figure(1)
 def plot_durations():
     plt.close()
@@ -166,13 +164,14 @@ def plot_durations():
         display.clear_output(wait=True)
         display.display(plt.gcf())
 
-    plt.savefig("./result/dqn_random_map_no_slippery_1_hole.png")
+    plt.savefig("./result/linear_one_map_no_slippery.png")
 
 
 
 print('\nCollecting experience...')
 succeed_episode = 0
 new_map = ["SFFF","FHFH","FFFH","HFFG"]
+env = FrozenLakeEnv(desc=new_map, is_slippery=IS_SLIPPERY)
 for i_episode in range(1000000):
 
     if use_random_map and i_episode % 10 == 0:
@@ -198,22 +197,23 @@ for i_episode in range(1000000):
         ep_r += r
         if dqn.memory_counter > MEMORY_CAPACITY:
             dqn.learn()
-            if done:
-                episode_durations.append(ep_r)
-                if ep_r > 0:
-                    #EPSILON = 1 - 1. / ((i_episode / 500) + 10)
-                    succeed_episode += 1
-
-                if i_episode % 1000 == 1:
-                    print('EP: {:d} succeed rate {:4f}'.format(i_episode, succeed_episode / 1000))
-                    succeed_episode = 0
-
-                if i_episode % 5000 == 1:
-                    plot_durations()
 
         if done:
+            episode_durations.append(ep_r)
+            if ep_r > 0:
+                EPSILON = 1 - 1. / ((i_episode / 500) + 10)
+                succeed_episode += 1
+
+            if i_episode % 1000 == 1:
+                print('EP: {:d} succeed rate {:4f}'.format(i_episode, succeed_episode / 1000))
+                succeed_episode = 0
+
+            if i_episode % 5000 == 1:
+                plot_durations()
+
+
             break
         state = state_next
 
-torch.save(dqn, 'full_connect_net_params.pkl')
+torch.save(dqn, 'dqn_random_map_no_slippery_1_hole.pkl')
 
