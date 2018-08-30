@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 import numpy as np
 import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 
 import random
@@ -42,7 +44,7 @@ MEMORY_CAPACITY = 2000
 
 IS_SLIPPERY = False        # is the lake slippery
 use_random_map = True
-HOLE_NUM = 2               # the number of holes
+HOLE_NUM = 1               # the number of holes
 
 env = FrozenLakeEnv(desc=random_map(HOLE_NUM), is_slippery=IS_SLIPPERY)
 env = env.unwrapped
@@ -131,6 +133,8 @@ class DQN(object):
 dqn = DQN()
 
 episode_durations = []
+
+
 plt.figure(1)
 def plot_durations():
     plt.close()
@@ -145,22 +149,24 @@ def plot_durations():
         means = durations_t.unfold(0, 1000, 1000).mean(1).view(-1)
         means = torch.cat((torch.zeros(1), means))
 
-        plt.plot(means.numpy())
+        A, = plt.plot(means.numpy(), label = 'Mean reward of 1000 Episode ')
 
     if len(durations_t) >= 10000:
         means = durations_t.unfold(0, 10000, 1000).mean(1).view(-1)
         means = torch.cat((torch.zeros(1), means))
 
-        plt.plot(means.numpy())
+        B, = plt.plot(means.numpy(), label = 'Mean reward of 10000 Episode')
 
         #plot_data = means.numpy()[range(0,len(means), len(means) // 100)]
+
+        legend = plt.legend(handles=[A, B])
 
     plt.pause(0.001)  # pause a bit so that plots are updated
     if is_ipython:
         display.clear_output(wait=True)
         display.display(plt.gcf())
 
-    plt.savefig("deep_net_random_map_slippery.png")
+    plt.savefig("./result/dqn_random_map_no_slippery_1_hole.png")
 
 
 
